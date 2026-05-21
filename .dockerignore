@@ -1,0 +1,17 @@
+venv/
+backend/venv/
+frontend/venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.git/
+.gitignore
+.DS_Store
+Thumbs.db
+backend/dataset/
+backend/models/
+backend/sessions/
+frontend/.streamlit/

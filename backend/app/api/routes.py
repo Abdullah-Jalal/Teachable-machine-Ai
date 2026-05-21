@@ -68,7 +68,7 @@ def predict(
         "message": "Prediction completed successfully.",
         "data": result
     }
-https://github.com/Abdullah-Jalal/Teachable-machine-Ai
+
 
 @router.get("/dataset-summary")
 def dataset_summary(session_id: str):

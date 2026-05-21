@@ -4,7 +4,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Dict, List
-
+import os
 import av
 import cv2
 import numpy as np
@@ -15,7 +15,7 @@ from PIL import Image
 from streamlit_webrtc import VideoProcessorBase, WebRtcMode, webrtc_streamer
 
 
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 
 @dataclass
@@ -1289,9 +1289,11 @@ def render_webcam_capture_section(class_item: Dict, index: int, updated_name: st
 
         if st.button("Start Recording", key=f"start_recording_{class_id}", use_container_width=True):
             processor.is_recording = True
+            show_status("Recording started. Move the object slowly in front of the camera.", "success")
 
         if st.button("Stop Recording", key=f"stop_recording_{class_id}", use_container_width=True):
             processor.is_recording = False
+            show_status("Recording stopped. You can save the captured samples now.", "info")
 
         if st.button("Save Webcam Samples", key=f"save_webcam_{class_id}", use_container_width=True):
             if not updated_name.strip():
@@ -1330,6 +1332,10 @@ def render_webcam_capture_section(class_item: Dict, index: int, updated_name: st
                     )
 
                     st.session_state.classes[index]["ui_state"] = "idle"
+
+                    if st.session_state.active_camera_class_id == class_id:
+                        st.session_state.active_camera_class_id = None
+                        
                     st.rerun()
 
                 except requests.exceptions.ConnectionError:
