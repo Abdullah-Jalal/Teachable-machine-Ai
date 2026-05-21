@@ -1,0 +1,22 @@
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+DATASET_DIR = BASE_DIR / "dataset"
+MODELS_DIR = BASE_DIR / "models"
+MODEL_PATH = MODELS_DIR / "model.pkl"
+
+SESSIONS_DIR = BASE_DIR / "sessions"
+SESSION_TTL_MINUTES = 60
+
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+MAX_IMAGE_SIZE_MB = 10
+MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
+
+IMAGE_SIZE = 224
+
+MIN_CLASSES_REQUIRED = 2
+MIN_IMAGES_PER_CLASS = 2
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
