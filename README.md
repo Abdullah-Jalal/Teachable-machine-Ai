@@ -1,113 +1,96 @@
-#Teachable Machine AI — Full Stack Image Classification Platform
+# Teachable Machine AI — Full Stack Image Classification Platform
 
-A modern full-stack AI application inspired by Google’s Teachable Machine that enables users to create custom image classification models directly from the browser.
+A full-stack AI web application inspired by Google Teachable Machine that allows users to create custom image classification models using their own dataset. Users can upload or capture images, train a model using transfer learning, and perform real-time predictions via image upload or webcam.
 
-The platform allows users to:
+---
 
-Create custom image classes
-Upload or capture image datasets
-Train an AI model using transfer learning
-Perform real-time image predictions
-Test predictions using webcam input
-Export trained models for reuse
+## 🚀 Overview
 
-Built with a production-style architecture using:
+This project implements a complete end-to-end machine learning workflow in a production-style architecture, combining frontend UI, backend APIs, and a transfer learning-based ML pipeline.
 
-Streamlit for the frontend
-FastAPI for backend APIs
-PyTorch + MobileNetV3 for feature extraction
-Scikit-learn Logistic Regression for lightweight classification
-Docker Compose for containerized deployment
-Demo Features
-Core Functionality
-Create and manage multiple image classes
-Upload training images per class
-Capture dataset samples using webcam
-Train a custom AI image classifier
-Predict uploaded images
-Real-time webcam predictions
-Confidence score visualization
-Export trained model packages
-Reset and clear active sessions
-System Architecture
-Frontend (Streamlit)
-        │
-        ▼
-Backend API (FastAPI)
-        │
-        ▼
-Transfer Learning Engine
-(MobileNetV3 Feature Extractor)
-        │
-        ▼
-Logistic Regression Classifier
-        │
-        ▼
-Prediction & Confidence Scores
-Tech Stack
-Frontend
-Technology	Purpose
-Python	Core language
-Streamlit	Interactive frontend UI
-streamlit-webrtc	Webcam streaming
-OpenCV	Image processing
-Pillow	Image handling
-Requests	API communication
-Backend
-Technology	Purpose
-FastAPI	REST API framework
-Uvicorn	ASGI server
-PyTorch	Deep learning framework
-Torchvision	Pre-trained models
-Scikit-learn	Classification pipeline
-Joblib	Model serialization
-Pillow	Image preprocessing
-Python Multipart	File uploads
-Machine Learning Pipeline
-Component	Description
-MobileNetV3	Transfer learning feature extractor
-ImageNet Normalization	Standard preprocessing
-Logistic Regression	Lightweight classifier
-Label Encoding	Class label management
-Train/Test Split	Model evaluation
-Accuracy Calculation	Performance measurement
-Probability Output	Confidence scoring
-Project Highlights
-Full-Stack AI Workflow
+Users can:
 
-Unlike traditional notebook-only ML projects, this application demonstrates a complete real-world AI workflow including:
+- Create custom image classes
+- Upload training images
+- Capture webcam samples
+- Train an image classification model
+- Perform real-time predictions
+- View confidence scores
+- Export trained models
+- Reset training sessions
 
-Frontend UI/UX
-Backend API integration
-Dataset management
-Transfer learning
-Real-time inference
-Webcam integration
-Dockerized deployment
-Frontend Features
-Modern Teachable Machine inspired interface
-Dynamic and editable class cards
-Add / delete / disable classes
-Upload image samples
-Webcam dataset capture
-Live training status updates
-Prediction preview panels
-Confidence score bars
-Backend connection monitoring
-Session reset functionality
-Export trained model button
-Backend Features
-RESTful API architecture using FastAPI
-Session-based dataset storage
-Temporary dataset handling
-Automatic session cleanup
-Dataset summary endpoint
-Model training endpoint
-Prediction endpoint
-Class deletion endpoint
-Model export endpoint
-Reset session endpoint
-Project Structure
+---
+
+## ✨ Features
+
+### 🖥️ Frontend (Streamlit)
+- Teachable Machine-inspired UI
+- Dynamic class management (add/edit/delete)
+- Image upload per class
+- Webcam-based dataset capture
+- Real-time training status updates
+- Image prediction interface
+- Webcam prediction support
+- Confidence score visualization
+- Backend health monitoring
+- Model export and reset controls
+
+---
+
+### ⚙️ Backend (FastAPI)
+- RESTful API architecture
+- Dataset upload and management
+- Session-based storage system
+- Training pipeline API
+- Prediction API
+- Model export endpoint
+- Dataset summary endpoint
+- Session reset functionality
+- Automatic cleanup of old sessions
+
+---
+
+### 🧠 Machine Learning Pipeline
+- Transfer Learning using MobileNetV3
+- Feature extraction using ImageNet-pretrained weights
+- Logistic Regression classifier
+- Image preprocessing (224×224 normalization)
+- Label encoding for class mapping
+- Train/test split evaluation
+- Accuracy calculation
+- Probability-based predictions
+
+---
+
+## 🧰 Tech Stack
+
+### Frontend
+- Python
+- Streamlit
+- streamlit-webrtc
+- OpenCV
+- Pillow
+- Requests
+
+### Backend
+- Python
+- FastAPI
+- Uvicorn
+- PyTorch
+- Torchvision
+- Scikit-learn
+- Joblib
+- Pillow
+
+### DevOps
+- Docker
+- Docker Compose
+
+---
+
+## 📁 Project Structure
+
+```txt
 teachable-machine-ai/
 │
 ├── backend/
@@ -135,54 +118,56 @@ teachable-machine-ai/
 ├── docker-compose.yml
 ├── .dockerignore
 └── README.md
-Installation & Setup
-Clone Repository
+
+⚡ Installation & Setup
+1. Clone Repository
 git clone https://github.com/Abdullah-Jalal/Teachable-machine-Ai.git
 cd Teachable-machine-Ai
-Run with Docker Compose
+2. Run with Docker Compose
 docker compose up --build
-Application URLs
-Service	URL
-Frontend	http://localhost:8501
-Backend API	http://localhost:8000
-API Docs	http://localhost:8000/docs
-Machine Learning Workflow
+
+🌐 Application URLs
+| Service     | URL                                                      |
+| ----------- | -------------------------------------------------------- |
+| Frontend    | [http://localhost:8501](http://localhost:8501)           |
+| Backend API | [http://localhost:8000](http://localhost:8000)           |
+| API Docs    | [http://localhost:8000/docs](http://localhost:8000/docs) |
+
+🔄 ML Workflow
 Training Pipeline
-Upload or capture image samples
-Images are resized to 224×224
-MobileNetV3 extracts deep features
-Logistic Regression trains on extracted embeddings
-Model accuracy is calculated
-Trained model is saved using Joblib
+Upload or capture images
+Resize to 224×224
+Extract features using MobileNetV3
+Train Logistic Regression classifier
+Evaluate accuracy
+Save model using Joblib
 Prediction Pipeline
-User uploads image or webcam frame
-Image preprocessing is applied
-Features extracted using MobileNetV3
-Logistic Regression predicts class
-Confidence probabilities are returned
-Why This Project Stands Out
+Input image (upload/webcam)
+Preprocess image
+Extract features
+Predict class probabilities
+Return confidence scores
 
-This project demonstrates practical knowledge of:
-
-Artificial Intelligence
-Transfer Learning
-Full-Stack Development
-REST API Design
-Real-Time Prediction Systems
-Computer Vision
-Docker Containerization
-Production-Oriented Architecture
-
-It bridges the gap between machine learning experimentation and deployable AI applications.
-
-Future Improvements
-Multi-user authentication
-Cloud deployment support
-Advanced CNN fine-tuning
-Dataset augmentation
-Training analytics dashboard
-GPU acceleration
-Model versioning
-Real-time performance metrics
+🔄 ML Workflow
+Training Pipeline
+Upload or capture images
+Resize to 224×224
+Extract features using MobileNetV3
+Train Logistic Regression classifier
+Evaluate accuracy
+Save model using Joblib
+Prediction Pipeline
+Input image (upload/webcam)
+Preprocess image
+Extract features
+Predict class probabilities
+Return confidence scores
+🚀 Future Improvements
+User authentication system
+Cloud deployment (AWS / Azure)
+Dataset augmentation pipeline
+Training visualization dashboard
+GPU acceleration support
+Model versioning system
 Database integration
-Mobile responsiveness
+Mobile responsive UI
