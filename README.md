@@ -1,96 +1,119 @@
-# Teachable Machine AI — Full Stack Image Classification Platform
+🧠 Teachable Machine AI — Full Stack Intelligent Image Classification Platform
 
-A full-stack AI web application inspired by Google Teachable Machine that allows users to create custom image classification models using their own dataset. Users can upload or capture images, train a model using transfer learning, and perform real-time predictions via image upload or webcam.
+A production-style full-stack AI web application inspired by Google Teachable Machine that enables users to build, train, evaluate, and deploy custom image classification models using their own dataset.
 
----
+This project goes beyond standard image classification by adding:
 
-## 🚀 Overview
+📊 Dataset quality analysis
+🧠 AI insights engine
+📈 Training analytics
+⚡ Real-time prediction performance metrics
+🎯 Explainable AI outputs
+🚀 Overview
 
-This project implements a complete end-to-end machine learning workflow in a production-style architecture, combining frontend UI, backend APIs, and a transfer learning-based ML pipeline.
+This system implements a complete end-to-end machine learning pipeline with a modern web interface and backend API architecture.
 
 Users can:
 
-- Create custom image classes
-- Upload training images
-- Capture webcam samples
-- Train an image classification model
-- Perform real-time predictions
-- View confidence scores
-- Export trained models
-- Reset training sessions
+Create custom image classes dynamically
+Upload or capture training images via webcam
+Train ML models using transfer learning (MobileNetV3)
+Perform real-time image & webcam predictions
+Analyze dataset quality before training
+View AI-generated insights after training
+Monitor model performance metrics
+Export trained models
+Reset and manage training sessions
 
----
+✨ Key Features
+🖥️ Frontend (Streamlit Dashboard)
+Teachable Machine–style interactive UI
+Dynamic class creation and management
+Image upload per class
+Webcam-based dataset collection (frame-by-frame capture)
+Real-time training progress visualization
 
-## ✨ Features
+Dark mode UI support 🌙
+Prediction interface (image + webcam)
+Top-K prediction display (Explainable AI)
+Confidence status badges (High / Medium / Low)
+Recent predictions history panel
+Live FPS + inference time monitoring
 
-### 🖥️ Frontend (Streamlit)
-- Teachable Machine-inspired UI
-- Dynamic class management (add/edit/delete)
-- Image upload per class
-- Webcam-based dataset capture
-- Real-time training status updates
-- Image prediction interface
-- Webcam prediction support
-- Confidence score visualization
-- Backend health monitoring
-- Model export and reset controls
+Dataset Health Score dashboard 📊
+AI Insights Panel (post-training analysis) 🧠
+Model export and reset controls
 
----
+⚙️ Backend (FastAPI Service)
+RESTful API architecture
+Dataset session management
+Training pipeline orchestration
+Prediction API with probability output
+Model export (Joblib serialization)
+Dataset summary & analytics endpoint
+Session reset and cleanup system
+Real-time inference support for webcam
 
-### ⚙️ Backend (FastAPI)
-- RESTful API architecture
-- Dataset upload and management
-- Session-based storage system
-- Training pipeline API
-- Prediction API
-- Model export endpoint
-- Dataset summary endpoint
-- Session reset functionality
-- Automatic cleanup of old sessions
+🧠 Machine Learning Pipeline
+Transfer Learning using MobileNetV3 (ImageNet pretrained)
+Feature extraction for high-performance classification
+Logistic Regression classifier
+Image preprocessing (224×224 normalization)
+Label encoding for dynamic class mapping
+Train/test evaluation pipeline
+Accuracy computation
+Probability-based multi-class predictions
+Confusion Matrix evaluation 📊
+Precision, Recall, F1-score support
+📊 AI Intelligence Layer (Advanced Additions)
 
----
+This project includes an AI analysis engine that evaluates model and dataset quality:
 
-### 🧠 Machine Learning Pipeline
-- Transfer Learning using MobileNetV3
-- Feature extraction using ImageNet-pretrained weights
-- Logistic Regression classifier
-- Image preprocessing (224×224 normalization)
-- Label encoding for class mapping
-- Train/test split evaluation
-- Accuracy calculation
-- Probability-based predictions
+📈 Dataset Health Score
+Class balance analysis
+Dataset size validation
+Missing class detection
+Data sufficiency warnings
 
----
+🧠 AI Insights Panel
+Best performing class detection
+Weak class identification
+Dataset imbalance detection
+Model confidence stability analysis
 
-## 🧰 Tech Stack
+🎯 Explainable Predictions
+Top-3 predictions breakdown
+Confidence classification:
+High Confidence (≥85%)
+Medium Confidence (60–84%)
+Low Confidence (<60%)
+⚡ Performance Metrics
+Live FPS counter (webcam mode)
+Inference time (ms)
+Training duration analytics
 
-### Frontend
-- Python
-- Streamlit
-- streamlit-webrtc
-- OpenCV
-- Pillow
-- Requests
+🧰 Tech Stack
+Frontend
+Python
+Streamlit
+streamlit-webrtc
+OpenCV
+Pillow
+Requests
+Backend
+Python
+FastAPI
+Uvicorn
+PyTorch
+Torchvision
+Scikit-learn
+Joblib
+Pillow
+DevOps
+Docker
+Docker Compose
 
-### Backend
-- Python
-- FastAPI
-- Uvicorn
-- PyTorch
-- Torchvision
-- Scikit-learn
-- Joblib
-- Pillow
-
-### DevOps
-- Docker
-- Docker Compose
-
----
-
-## 📁 Project Structure
-
-```txt
+📁 Project Structure
 teachable-machine-ai/
 │
 ├── backend/
@@ -134,40 +157,39 @@ docker compose up --build
 | API Docs    | [http://localhost:8000/docs](http://localhost:8000/docs) |
 
 🔄 ML Workflow
-Training Pipeline
+🏋️ Training Pipeline
 Upload or capture images
-Resize to 224×224
-Extract features using MobileNetV3
+Dataset health analysis
+Resize images to 224×224
+Feature extraction using MobileNetV3
 Train Logistic Regression classifier
-Evaluate accuracy
+Evaluate model performance
+Generate AI insights
 Save model using Joblib
-Prediction Pipeline
+🔮 Prediction Pipeline
 Input image (upload/webcam)
 Preprocess image
-Extract features
+Extract deep features
 Predict class probabilities
-Return confidence scores
+Return:
+Top predictions
+Confidence score
+Confidence status
+Inference time
+📊 Evaluation System
 
-🔄 ML Workflow
-Training Pipeline
-Upload or capture images
-Resize to 224×224
-Extract features using MobileNetV3
-Train Logistic Regression classifier
-Evaluate accuracy
-Save model using Joblib
-Prediction Pipeline
-Input image (upload/webcam)
-Preprocess image
-Extract features
-Predict class probabilities
-Return confidence scores
+This project includes a full ML evaluation module:
+
+Confusion Matrix heatmap
+Precision, Recall, F1-score
+Dataset imbalance detection
+Class-wise performance analysis
 🚀 Future Improvements
 User authentication system
-Cloud deployment (AWS / Azure)
+Cloud deployment (AWS / Azure / GCP)
 Dataset augmentation pipeline
-Training visualization dashboard
+Model versioning system (v1, v2, v3)
 GPU acceleration support
-Model versioning system
-Database integration
+Database integration (PostgreSQL / MongoDB)
 Mobile responsive UI
+One-click dataset export/import
