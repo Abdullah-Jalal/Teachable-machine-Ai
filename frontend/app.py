@@ -13,6 +13,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from PIL import Image
 from streamlit_webrtc import VideoProcessorBase, WebRtcMode, webrtc_streamer
+import matplotlib.pyplot as plt
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
@@ -64,13 +65,24 @@ class WebcamSampleProcessor(VideoProcessorBase):
 @dataclass
 class PreviewWebcamProcessor(VideoProcessorBase):
     latest_frame: bytes | None = None
-    capture_interval_seconds: float = 0.5
+    capture_interval_seconds: float = 0.3
     last_capture_time: float = 0.0
+    frame_times: List[float] = field(default_factory=list)
+    fps: float = 0.0
+    inference_time_ms: float = 0.0
+    last_predictions: dict = field(default_factory=dict)
+    session_id: str = ""
 
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         image = frame.to_ndarray(format="bgr24")
-
         current_time = time.time()
+
+        self.frame_times.append(current_time)
+        self.frame_times = [t for t in self.frame_times if current_time - t <= 1.0]
+        if len(self.frame_times) > 1:
+            self.fps = len(self.frame_times) / (self.frame_times[-1] - self.frame_times[0] + 1e-5)
+        else:
+            self.fps = 0.0
 
         if current_time - self.last_capture_time >= self.capture_interval_seconds:
             self.last_capture_time = current_time
@@ -85,6 +97,36 @@ class PreviewWebcamProcessor(VideoProcessorBase):
 
             if success:
                 self.latest_frame = encoded_image.tobytes()
+                if self.session_id:
+                    try:
+                        start_inf = time.time()
+                        files_payload = {
+                            "file": (
+                                "webcam_preview.jpg",
+                                self.latest_frame,
+                                "image/jpeg",
+                            )
+                        }
+                        response = requests.post(
+                            f"{API_BASE_URL}/predict",
+                            data={"session_id": self.session_id},
+                            files=files_payload,
+                            timeout=2,
+                        )
+                        if response.status_code == 200:
+                            self.last_predictions = response.json()["data"]
+                            self.inference_time_ms = (time.time() - start_inf) * 1000
+                    except Exception:
+                        pass
+
+        # Draw overlay HUD
+        cv2.rectangle(image, (5, 5), (280, 85), (0, 0, 0), -1)
+        cv2.putText(image, f"FPS: {self.fps:.1f}", (15, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.putText(image, f"Inference: {self.inference_time_ms:.1f}ms", (15, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        if self.last_predictions:
+            pred_class = self.last_predictions.get("predicted_class", "None")
+            confidence = self.last_predictions.get("confidence", 0.0)
+            cv2.putText(image, f"Pred: {pred_class} ({confidence}%)", (15, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
         return av.VideoFrame.from_ndarray(image, format="bgr24")
 
@@ -724,6 +766,136 @@ def inject_custom_css() -> None:
         unsafe_allow_html=True,
     )
 
+    if st.session_state.get("dark_mode", False):
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background: #121212 !important;
+                color: #e0e0e0 !important;
+            }
+            .tm-topbar {
+                background: #1e1e1e !important;
+                border: 1px solid #333333 !important;
+                color: #ffffff !important;
+            }
+            .tm-logo-text {
+                color: #8ab4f8 !important;
+            }
+            .tm-class-card-pro {
+                background: #1e1e1e !important;
+                border: 1px solid #333333 !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+                color: #ffffff !important;
+            }
+            .tm-class-card-pro:hover {
+                box-shadow: 0 6px 16px rgba(0,0,0,0.6) !important;
+            }
+            .tm-card-divider-pro {
+                background: #333333 !important;
+            }
+            .tm-sample-label {
+                color: #e0e0e0 !important;
+            }
+            .tm-gallery-panel {
+                border-left: 1px solid #333333 !important;
+            }
+            .tm-counter {
+                color: #9aa0a6 !important;
+            }
+            .tm-empty-gallery {
+                background: #181818 !important;
+                border: 1px dashed #333333 !important;
+                color: #9aa0a6 !important;
+            }
+            .tm-panel {
+                background: #1e1e1e !important;
+                border: 1px solid #333333 !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+                color: #ffffff !important;
+            }
+            .tm-panel-header {
+                border-bottom: 1px solid #333333 !important;
+                color: #ffffff !important;
+            }
+            .tm-muted {
+                color: #9aa0a6 !important;
+            }
+            .tm-status-success {
+                background: #137333 !important;
+                color: #e6f4ea !important;
+            }
+            .tm-status-error {
+                background: #c5221f !important;
+                color: #fce8e6 !important;
+            }
+            .tm-status-info {
+                background: #1967d2 !important;
+                color: #e8f0fe !important;
+            }
+            .tm-preview-title {
+                color: #ffffff !important;
+            }
+            .tm-input-title {
+                color: #9aa0a6 !important;
+            }
+            .tm-output-title {
+                color: #9aa0a6 !important;
+            }
+            .tm-prediction-main {
+                background: #1a233a !important;
+                border: 1px solid #1a3a6c !important;
+            }
+            .tm-prediction-class {
+                color: #8ab4f8 !important;
+            }
+            .tm-prediction-confidence {
+                color: #e0e0e0 !important;
+            }
+            .tm-confidence-class {
+                color: #9aa0a6 !important;
+            }
+            .tm-confidence-track {
+                background: #333333 !important;
+            }
+            .tm-webcam-placeholder {
+                background: #1a1a1a !important;
+                border: 1px dashed #333333 !important;
+                color: #9aa0a6 !important;
+            }
+            div.stButton > button {
+                background: #1e1e1e !important;
+                color: #8ab4f8 !important;
+                border: 1px solid #333333 !important;
+            }
+            div.stButton > button:hover {
+                background: #1a3a6c !important;
+                color: #ffffff !important;
+                border: 1px solid #1967d2 !important;
+            }
+            div[data-testid="stTextInput"] input {
+                color: #ffffff !important;
+            }
+            div[data-testid="stTextInput"] input:hover {
+                background: #282828 !important;
+                border: 1px solid #333333 !important;
+            }
+            div[data-testid="stTextInput"] input:focus {
+                background: #1e1e1e !important;
+                border: 1px solid #1967d2 !important;
+            }
+            .stMarkdown, p, span, label, li, ul {
+                color: #e0e0e0 !important;
+            }
+            div[data-testid="stExpander"] {
+                background-color: #1e1e1e !important;
+                border: 1px solid #333333 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
 
 def initialize_session_state() -> None:
     if "session_id" not in st.session_state:
@@ -731,8 +903,8 @@ def initialize_session_state() -> None:
 
     if "classes" not in st.session_state:
         st.session_state.classes = [
-            {"id": 1, "name": "Class 1", "uploaded_count": 0, "enabled": True, "ui_state": "idle"},
-            {"id": 2, "name": "Class 2", "uploaded_count": 0, "enabled": True, "ui_state": "idle"},
+            {"id": 1, "name": "Class 1", "uploaded_count": 0, "enabled": True, "disabled": False, "images": [], "ui_state": "idle"},
+            {"id": 2, "name": "Class 2", "uploaded_count": 0, "enabled": True, "disabled": False, "images": [], "ui_state": "idle"},
         ]
 
     if "next_class_id" not in st.session_state:
@@ -761,6 +933,324 @@ def initialize_session_state() -> None:
 
     if "active_camera_class_id" not in st.session_state:
         st.session_state.active_camera_class_id = None
+
+    if "dark_mode" not in st.session_state:
+        st.session_state.dark_mode = False
+
+    if "history" not in st.session_state:
+        st.session_state.history = []
+
+
+def sanitize_name(name: str) -> str:
+    import re
+    cleaned = name.strip()
+    cleaned = re.sub(r"[^a-zA-Z0-9_-]", "_", cleaned)
+    return cleaned
+
+
+def sync_classes_with_backend_summary() -> None:
+    summary = st.session_state.get("dataset_summary", {})
+    if not summary:
+        return
+    classes_summary = summary.get("classes", {})
+    for c in st.session_state.classes:
+        name = c["name"]
+        sanitized = sanitize_name(name)
+        real_count = 0
+        if name in classes_summary:
+            real_count = classes_summary[name]
+        elif sanitized in classes_summary:
+            real_count = classes_summary[sanitized]
+        c["images"] = [None] * real_count
+        c["disabled"] = not c.get("enabled", True)
+
+
+def calculate_dataset_health():
+    classes = st.session_state.classes
+
+    valid_classes = [
+        c for c in classes
+        if len(c.get("images", [])) > 0 and not c.get("disabled", False)
+    ]
+
+    if not valid_classes:
+        return 0, ["No dataset available"]
+
+    counts = [len(c.get("images", [])) for c in valid_classes]
+
+    min_images = min(counts)
+    max_images = max(counts)
+
+    score = 100
+    messages = []
+
+    if min_images < 10:
+        score -= 25
+        messages.append("Some classes have very few samples")
+
+    if max_images - min_images > 20:
+        score -= 20
+        messages.append("Dataset is imbalanced")
+
+    if len(valid_classes) < 2:
+        score -= 50
+        messages.append("Need at least 2 classes")
+
+    if score >= 80:
+        messages.append("Dataset quality looks good")
+
+    return max(score, 0), messages
+
+
+def render_dataset_health_score() -> None:
+    score, messages = calculate_dataset_health()
+    if score >= 80:
+        color = "#137333"
+        bg_color = "#e6f4ea"
+        border_color = "#a8dab5"
+    elif score >= 50:
+        color = "#b06000"
+        bg_color = "#fef7e0"
+        border_color = "#ffe0b2"
+    else:
+        color = "#c5221f"
+        bg_color = "#fce8e6"
+        border_color = "#f5c2c1"
+
+    messages_html = "".join([f"<li style='margin-bottom: 2px;'>{msg}</li>" for msg in messages])
+
+    st.markdown(
+        f"""
+        <div style="
+            background: {bg_color};
+            border: 1px solid {border_color};
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 22px;
+            color: {color};
+            font-family: Inter, system-ui, sans-serif;
+        ">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 800; font-size: 16px; color: {color} !important;">Dataset Health Score</span>
+                <span style="font-size: 26px; font-weight: 900; color: {color} !important;">{score}/100</span>
+            </div>
+            <ul style="margin: 10px 0 0 16px; padding: 0; font-size: 13px; line-height: 1.4; color: {color} !important;">
+                {messages_html}
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def plot_confusion_matrix(cm_data, class_names):
+    import numpy as np
+    cm = np.array(cm_data)
+    fig, ax = plt.subplots(figsize=(4.5, 3.5))
+    dark_mode = st.session_state.get("dark_mode", False)
+    if dark_mode:
+        fig.patch.set_facecolor('#1e1e1e')
+        ax.set_facecolor('#1e1e1e')
+        text_color = 'white'
+        cmap = plt.cm.Blues_r
+    else:
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+        text_color = 'black'
+        cmap = plt.cm.Blues
+
+    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    ax.set_xticks(np.arange(len(class_names)))
+    ax.set_yticks(np.arange(len(class_names)))
+    ax.set_xticklabels(class_names, color=text_color)
+    ax.set_yticklabels(class_names, color=text_color)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    thresh = cm.max() / 2.
+    for i in range(len(class_names)):
+        for j in range(len(class_names)):
+            ax.text(j, i, format(cm[i, j], 'd'),
+                    ha="center", va="center",
+                    color="white" if cm[i, j] > thresh else text_color)
+
+    ax.set_title("Confusion Matrix Heatmap", color=text_color, fontweight='bold', fontsize=11)
+    ax.set_xlabel("Predicted Label", color=text_color, fontsize=9)
+    ax.set_ylabel("True Label", color=text_color, fontsize=9)
+
+    if dark_mode:
+        ax.spines['bottom'].set_color('#333333')
+        ax.spines['top'].set_color('#333333')
+        ax.spines['right'].set_color('#333333')
+        ax.spines['left'].set_color('#333333')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
+    else:
+        ax.spines['bottom'].set_color('#dadce0')
+        ax.spines['top'].set_color('#dadce0')
+        ax.spines['right'].set_color('#dadce0')
+        ax.spines['left'].set_color('#dadce0')
+
+    fig.tight_layout()
+    return fig
+
+
+def render_evaluation_metrics_panel(training_result) -> None:
+    eval_metrics = training_result.get("eval_metrics")
+    if not eval_metrics:
+        return
+
+    class_metrics = eval_metrics.get("class_metrics", {})
+    class_names = list(class_metrics.keys())
+
+    st.markdown('<div class="tm-panel" style="margin-top: 20px;">', unsafe_allow_html=True)
+    st.markdown('<div class="tm-panel-header">Evaluation Metrics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tm-panel-body">', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        try:
+            fig = plot_confusion_matrix(eval_metrics["confusion_matrix"], class_names)
+            st.pyplot(fig, clear_figure=True)
+        except Exception as e:
+            st.error(f"Error plotting confusion matrix: {str(e)}")
+
+    with col2:
+        st.markdown("**Metrics Summary**")
+        table_rows = ""
+        for name, metrics in class_metrics.items():
+            table_rows += f"""
+            <tr style="border-bottom: 1px solid #dadce0;">
+                <td style="padding: 6px; font-weight: bold;">{name}</td>
+                <td style="padding: 6px; text-align: right;">{metrics['precision']:.1f}%</td>
+                <td style="padding: 6px; text-align: right;">{metrics['recall']:.1f}%</td>
+                <td style="padding: 6px; text-align: right;">{metrics['f1_score']:.1f}%</td>
+                <td style="padding: 6px; text-align: right;">{metrics['support']}</td>
+            </tr>
+            """
+        
+        avg_f1 = np.mean([m['f1_score'] for m in class_metrics.values()])
+        avg_precision = np.mean([m['precision'] for m in class_metrics.values()])
+        avg_recall = np.mean([m['recall'] for m in class_metrics.values()])
+        total_support = sum([m['support'] for m in class_metrics.values()])
+
+        table_rows += f"""
+        <tr style="background: #e8f0fe; font-weight: bold; border-top: 2px solid #1967d2;">
+            <td style="padding: 6px; color: #1967d2 !important;">Macro Avg</td>
+            <td style="padding: 6px; text-align: right; color: #1967d2 !important;">{avg_precision:.1f}%</td>
+            <td style="padding: 6px; text-align: right; color: #1967d2 !important;">{avg_recall:.1f}%</td>
+            <td style="padding: 6px; text-align: right; color: #1967d2 !important;">{avg_f1:.1f}%</td>
+            <td style="padding: 6px; text-align: right; color: #1967d2 !important;">{total_support}</td>
+        </tr>
+        """
+
+        dark_mode = st.session_state.get("dark_mode", False)
+        header_style = "background: #f1f3f4; color: #202124;" if not dark_mode else "background: #2a2a2a; color: #ffffff;"
+        border_style = "border: 1px solid #dadce0;" if not dark_mode else "border: 1px solid #333333;"
+        text_color_style = "color: #202124;" if not dark_mode else "color: #e0e0e0;"
+
+        st.markdown(
+            f"""
+            <table style="width: 100%; border-collapse: collapse; font-family: Inter, sans-serif; font-size: 12px; {border_style} {text_color_style}">
+                <thead>
+                    <tr style="{header_style} font-weight: bold;">
+                        <th style="padding: 6px; text-align: left; border-bottom: 2px solid #c4c7c5;">Class</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 2px solid #c4c7c5;">P</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 2px solid #c4c7c5;">R</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 2px solid #c4c7c5;">F1</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 2px solid #c4c7c5;">Supp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_rows}
+                </tbody>
+            </table>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_ai_insights(training_result) -> None:
+    eval_metrics = training_result.get("eval_metrics")
+    class_distribution = training_result.get("class_distribution", {})
+
+    if not eval_metrics or not class_distribution:
+        return
+
+    class_metrics = eval_metrics.get("class_metrics", {})
+    if not class_metrics:
+        return
+
+    st.markdown('<div class="tm-panel" style="margin-top: 20px;">', unsafe_allow_html=True)
+    st.markdown('<div class="tm-panel-header">AI Insights Panel</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tm-panel-body">', unsafe_allow_html=True)
+
+    insights = []
+
+    # 1. Compare performance
+    best_class = max(class_metrics, key=lambda k: class_metrics[k]["f1_score"])
+    best_f1 = class_metrics[best_class]["f1_score"]
+    insights.append(f"🎉 **{best_class} class performs best** with an F1-score of **{best_f1:.1f}%**.")
+
+    worst_class = min(class_metrics, key=lambda k: class_metrics[k]["f1_score"])
+    worst_f1 = class_metrics[worst_class]["f1_score"]
+    if worst_f1 < 75 and worst_class != best_class:
+        insights.append(f"⚠️ **{worst_class} class needs improvement** (F1-score: **{worst_f1:.1f}%**). Consider adding more diverse training images.")
+
+    # 2. Imbalance detection
+    counts = list(class_distribution.values())
+    if len(counts) > 1:
+        ratio = max(counts) / (min(counts) + 1e-5)
+        min_class = min(class_distribution, key=class_distribution.get)
+        max_class = max(class_distribution, key=class_distribution.get)
+        if ratio > 2.0:
+            insights.append(f"🚨 **Dataset Imbalance:** **{min_class}** has significantly fewer samples than **{max_class}** ({ratio:.1f}x imbalance ratio). Add more images to **{min_class}**.")
+        elif ratio > 1.25:
+            insights.append(f"⚠️ **Dataset Imbalance:** **{min_class}** has fewer samples than **{max_class}** (ratio: {ratio:.1f}x).")
+        else:
+            insights.append("✅ **Dataset Balance:** Your dataset distribution is well-balanced.")
+
+    # 3. Stability comment
+    avg_f1 = np.mean([m["f1_score"] for m in class_metrics.values()])
+    if avg_f1 >= 85:
+        insights.append("🛡️ **Model Stability:** Model confidence is **stable and highly reliable**.")
+    elif avg_f1 >= 60:
+        insights.append("⚖️ **Model Stability:** Model confidence is **moderately stable**. Borderline inputs might cause fluctuating predictions.")
+    else:
+        insights.append("❌ **Model Stability:** Model confidence is **unstable**. Add more clean training samples to stabilize predictions.")
+
+    dark_mode = st.session_state.get("dark_mode", False)
+    bg_style = "background: #f8fafd; border: 1px solid #d9e2f3;" if not dark_mode else "background: #181818; border: 1px solid #333333;"
+    text_style = "color: #3c4043; line-height: 1.6; font-size: 13px;" if not dark_mode else "color: #e0e0e0; line-height: 1.6; font-size: 13px;"
+
+    insights_html = "".join([f"<div style='margin-bottom: 8px;'>{ins}</div>" for ins in insights])
+
+    st.markdown(
+        f"""
+        <div style="border-radius: 8px; padding: 16px; {bg_style} {text_style}">
+            {insights_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def add_to_prediction_history(prediction) -> None:
+    if "history" not in st.session_state:
+        st.session_state.history = []
+    
+    prediction_info = {
+        "class": prediction["predicted_class"],
+        "confidence": prediction["confidence"]
+    }
+    st.session_state.history.append(prediction_info)
+    st.session_state.history = st.session_state.history[-5:]
 
 
 def render_topbar() -> None:
@@ -1080,6 +1570,7 @@ def handle_class_action(action: str, class_item: Dict, index: int) -> None:
 
     if action == "disable":
         st.session_state.classes[index]["enabled"] = False
+        st.session_state.classes[index]["disabled"] = True
         st.session_state.classes[index]["ui_state"] = "idle"
 
         if st.session_state.active_camera_class_id == class_id:
@@ -1092,6 +1583,7 @@ def handle_class_action(action: str, class_item: Dict, index: int) -> None:
 
     if action == "enable":
         st.session_state.classes[index]["enabled"] = True
+        st.session_state.classes[index]["disabled"] = False
         st.session_state.classes[index]["ui_state"] = "idle"
 
         st.session_state.model_trained = False
@@ -1592,14 +2084,53 @@ def render_training_panel() -> None:
                     show_status(warning, "error")
                 st.stop()
 
-            with st.spinner("Training model... This may take a moment."):
-                result = train_model_on_backend()
+            # Multi-stage Progress bar animation
+            status_text = st.empty()
+            progress = st.progress(0)
+            
+            # Stage 1: Data Loading
+            status_text.markdown("🔄 **Stage 1/4: Data loading...**")
+            for i in range(25):
+                time.sleep(0.01)
+                progress.progress(i + 1)
+
+            # Stage 2: Feature Extraction (Make actual backend request)
+            status_text.markdown("🧠 **Stage 2/4: Feature extraction...**")
+            for i in range(25, 50):
+                time.sleep(0.01)
+                progress.progress(i + 1)
+
+            result = train_model_on_backend()
+
+            # Stage 3: Training
+            status_text.markdown("⚡ **Stage 3/4: Model training...**")
+            for i in range(50, 75):
+                time.sleep(0.01)
+                progress.progress(i + 1)
+
+            # Stage 4: Evaluation
+            status_text.markdown("📈 **Stage 4/4: Model evaluation...**")
+            for i in range(75, 100):
+                time.sleep(0.01)
+                progress.progress(i + 1)
+
+            progress.progress(100)
+            time.sleep(0.1)
+            status_text.empty()
+            progress.empty()
 
             st.session_state.model_trained = True
             st.session_state.training_result = result["data"]
             st.session_state.last_prediction = None
 
             show_status("Model trained successfully. Preview is now unlocked.", "success")
+            
+            # Sync session states classes
+            try:
+                st.session_state.dataset_summary = get_dataset_summary_from_backend()
+                sync_classes_with_backend_summary()
+            except Exception:
+                pass
 
         except requests.exceptions.ConnectionError:
             show_status(
@@ -1615,10 +2146,15 @@ def render_training_panel() -> None:
 
         st.markdown(
             f"""
-            <div class="tm-status-success">
-                Model ready. Accuracy: {training_data.get("accuracy_percentage", 0)}% 
-                • Classes: {len(training_data.get("classes", []))}
-                • Images: {training_data.get("total_images", 0)}
+            <div style="background: #e6f4ea; border: 1px solid #a8dab5; border-radius: 10px; padding: 16px; margin-top: 12px; font-family: Inter, sans-serif;">
+                <div style="font-weight: 800; color: #137333; font-size: 15px; margin-bottom: 10px;">⚡ Training Analytics</div>
+                <div style="font-size: 13px; color: #137333; line-height: 1.6;">
+                    • <b>Accuracy:</b> {training_data.get("accuracy_percentage", 0)}%<br>
+                    • <b>Training completed time:</b> {training_data.get("training_time_seconds", 0)}s<br>
+                    • <b>Images processed:</b> {training_data.get("images_processed", 0)}<br>
+                    • <b>Classes count:</b> {training_data.get("classes_count", 0)}<br>
+                    • <b>Device:</b> {training_data.get("device", "cpu")}
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1721,9 +2257,8 @@ def render_preview_input_controls() -> None:
 def render_webcam_prediction_preview() -> None:
     st.markdown(
         """
-        <div class="tm-webcam-placeholder" style="min-height: 80px;">
-            Webcam Preview Mode<br>
-            Use the camera below, then click Predict Webcam Frame.
+        <div class="tm-webcam-placeholder" style="min-height: 80px; margin-bottom: 5px;">
+            Webcam Preview Mode (Live Inference HUD Overlay)
         </div>
         """,
         unsafe_allow_html=True,
@@ -1742,27 +2277,38 @@ def render_webcam_prediction_preview() -> None:
 
     processor = webrtc_ctx.video_processor
 
-    if processor and processor.latest_frame:
+    if processor:
+        processor.session_id = st.session_state.session_id
+        
+        # Display live metrics from processor
+        fps_val = getattr(processor, "fps", 0.0)
+        inf_val = getattr(processor, "inference_time_ms", 0.0)
+        
         st.markdown(
-            """
-            <div class="tm-status-info">
-                Webcam frame is ready for prediction.
+            f"""
+            <div style="display: flex; gap: 15px; margin-top: 5px; margin-bottom: 10px;">
+                <div style="background: #e8f0fe; padding: 8px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #d2e3fc;">
+                    <div style="font-size: 11px; color: #5f6368; font-weight: 800;">LIVE FPS</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #1967d2;">{fps_val:.1f}</div>
+                </div>
+                <div style="background: #e8f0fe; padding: 8px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #d2e3fc;">
+                    <div style="font-size: 11px; color: #5f6368; font-weight: 800;">INFERENCE</div>
+                    <div style="font-size: 16px; font-weight: 900; color: #1967d2;">{inf_val:.1f} ms</div>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    else:
-        st.markdown(
-            """
-            <div class="tm-status-info">
-                Waiting for webcam frame...
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        
+        # If live predictions exist, update session state last prediction
+        if processor.last_predictions:
+            st.session_state.last_prediction = processor.last_predictions
+            # To avoid spamming, we only append to history on class change or manual trigger
+            if not st.session_state.history or st.session_state.history[-1]["class"] != processor.last_predictions["predicted_class"]:
+                add_to_prediction_history(processor.last_predictions)
 
     predict_webcam_clicked = st.button(
-        "Predict Webcam Frame",
+        "Capture & Predict Frame",
         key="predict_webcam_frame_button",
         use_container_width=True,
     )
@@ -1776,6 +2322,7 @@ def render_webcam_prediction_preview() -> None:
                     result = predict_frame_bytes_on_backend(processor.latest_frame)
 
                 st.session_state.last_prediction = result["data"]
+                add_to_prediction_history(result["data"])
 
             except requests.exceptions.ConnectionError:
                 show_status(
@@ -1851,6 +2398,7 @@ def render_preview_panel() -> None:
                         result = predict_image_on_backend(test_image)
 
                     st.session_state.last_prediction = result["data"]
+                    add_to_prediction_history(result["data"])
 
                 except requests.exceptions.ConnectionError:
                     show_status(
@@ -1869,6 +2417,44 @@ def render_preview_panel() -> None:
     if st.session_state.last_prediction:
         prediction = st.session_state.last_prediction
 
+        # Confidence status badge
+        confidence = prediction["confidence"]
+        if confidence >= 85:
+            status = "High Confidence"
+            badge_color = "#e6f4ea"
+            text_color = "#137333"
+            border_color = "#a8dab5"
+        elif confidence >= 60:
+            status = "Medium Confidence"
+            badge_color = "#fef7e0"
+            text_color = "#b06000"
+            border_color = "#ffe0b2"
+        else:
+            status = "Low Confidence"
+            badge_color = "#fce8e6"
+            text_color = "#c5221f"
+            border_color = "#f5c2c1"
+
+        st.markdown(
+            f"""
+            <div style="
+                background: {badge_color};
+                color: {text_color} !important;
+                border: 1px solid {border_color};
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 13px;
+                display: inline-block;
+                margin-bottom: 12px;
+                font-family: Inter, sans-serif;
+            ">
+                {status}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         st.markdown(
             f"""
             <div class="tm-prediction-main">
@@ -1880,7 +2466,26 @@ def render_preview_panel() -> None:
             unsafe_allow_html=True,
         )
 
+        # Top predictions explainable AI
+        st.markdown("**Top Predictions:**")
+        top_predictions = prediction.get("top_predictions", [])
+        if not top_predictions:
+            probs = prediction.get("probabilities", {})
+            sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)
+            top_predictions = sorted_probs[:3]
+            
+        for cls, prob in top_predictions:
+            st.markdown(f"• **{cls}** &nbsp;→&nbsp; **{prob:.1f}%**")
+
+        st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
         render_probability_bars(prediction["probabilities"])
+
+        # History display
+        if st.session_state.history:
+            st.markdown('<div style="height: 15px; border-top: 1px solid #dadce0; margin-top: 15px; padding-top: 10px;"></div>', unsafe_allow_html=True)
+            st.markdown("**Recent Predictions History:**")
+            for h in reversed(st.session_state.history):
+                st.markdown(f"• **{h['class']}** → {h['confidence']}%")
 
         with st.expander("Model Info"):
             st.write(f"**Model Accuracy:** {prediction.get('model_accuracy', 0)}%")
@@ -1924,34 +2529,42 @@ def reset_frontend_project_state() -> None:
 
 
 def main() -> None:
-    inject_custom_css()
     initialize_session_state()
     cleanup_old_sessions_on_backend()
 
     try:
         st.session_state.dataset_summary = get_dataset_summary_from_backend()
+        sync_classes_with_backend_summary()
     except Exception:
         pass
 
+    inject_custom_css()
     render_topbar()
 
     left_column, connector_column, middle_column, connector_column_2, right_column = st.columns(
-        [4.8, 0.35, 1.8, 0.35, 2.5]
+        [4.5, 0.3, 3.7, 0.3, 3.7]
     )
 
     with left_column:
+        st.markdown("## Dataset Section")
+        render_dataset_health_score()
         render_classes_area()
 
     with connector_column:
-        st.markdown('<div class="tm-connector"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="tm-connector" style="margin-top: 250px;"></div>', unsafe_allow_html=True)
 
     with middle_column:
+        st.markdown("## Training & Eval")
         render_training_panel()
+        if st.session_state.training_result:
+            render_evaluation_metrics_panel(st.session_state.training_result)
+            render_ai_insights(st.session_state.training_result)
 
     with connector_column_2:
-        st.markdown('<div class="tm-connector"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="tm-connector" style="margin-top: 250px;"></div>', unsafe_allow_html=True)
 
     with right_column:
+        st.markdown("## Prediction Section")
         render_preview_panel()
 
 

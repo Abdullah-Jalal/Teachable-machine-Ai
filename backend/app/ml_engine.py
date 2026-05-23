@@ -191,6 +191,9 @@ def train_model(session_id: str) -> Dict:
     It scans the dataset, extracts MobileNetV3 features,
     trains Logistic Regression, saves model.pkl, and returns metrics.
     """
+    import time
+    start_time = time.time()
+
     class_folders = get_class_folders(session_id)
     class_distribution = validate_dataset(class_folders)
 
@@ -240,6 +243,34 @@ def train_model(session_id: str) -> Dict:
     y_pred = classifier.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
+    # Compute evaluation metrics
+    from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+    cm = confusion_matrix(y_test, y_pred, labels=range(len(label_encoder.classes_)))
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_test, y_pred,
+        labels=range(len(label_encoder.classes_)),
+        zero_division=0
+    )
+
+    eval_metrics = {
+        "confusion_matrix": cm.tolist(),
+        "precision": [float(p) for p in precision],
+        "recall": [float(r) for r in recall],
+        "f1_score": [float(f) for f in f1],
+        "support": [int(s) for s in support],
+        "class_metrics": {
+            class_name: {
+                "precision": round(float(precision[idx]) * 100, 2),
+                "recall": round(float(recall[idx]) * 100, 2),
+                "f1_score": round(float(f1[idx]) * 100, 2),
+                "support": int(support[idx]),
+            }
+            for idx, class_name in enumerate(label_encoder.classes_)
+        }
+    }
+
+    training_time = round(time.time() - start_time, 2)
+
     session_model_path = get_session_model_path(session_id)
     session_model_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -252,6 +283,8 @@ def train_model(session_id: str) -> Dict:
         "feature_extractor": "mobilenet_v3_small",
         "accuracy": float(accuracy),
         "total_images": int(len(labels)),
+        "eval_metrics": eval_metrics,
+        "training_time_seconds": training_time,
     }
 
     joblib.dump(model_package, session_model_path)
@@ -265,6 +298,10 @@ def train_model(session_id: str) -> Dict:
         "class_distribution": class_distribution,
         "total_images": int(len(labels)),
         "device": str(device),
+        "training_time_seconds": training_time,
+        "images_processed": int(len(labels)),
+        "classes_count": len(label_encoder.classes_),
+        "eval_metrics": eval_metrics,
     }
 
 
@@ -344,6 +381,13 @@ def predict_image(session_id: str, image_file) -> Dict:
 
     confidence = probability_dict[predicted_class]
 
+    sorted_predictions = sorted(
+        probability_dict.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+    top_predictions = sorted_predictions[:3]
+
     return {
         "predicted_class": predicted_class,
         "confidence": confidence,
@@ -352,4 +396,5 @@ def predict_image(session_id: str, image_file) -> Dict:
         "trained_classes": class_names,
         "feature_extractor": model_package.get("feature_extractor", "mobilenet_v3_small"),
         "image_size": model_package.get("image_size", IMAGE_SIZE),
+        "top_predictions": top_predictions,
     }
