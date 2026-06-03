@@ -144,9 +144,20 @@ class PreviewWebcamProcessor(VideoProcessorBase):
         return resized
 
 
+# Load custom TB icon
+icon_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "tb_icon.png"
+)
+
+if os.path.exists(icon_path):
+    tb_icon = Image.open(icon_path)
+else:
+    tb_icon = "🧠"
+
 st.set_page_config(
     page_title="Teachable Machine AI",
-    page_icon="🧠",
+    page_icon=tb_icon,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -766,56 +777,56 @@ def inject_custom_css() -> None:
         unsafe_allow_html=True,
     )
 
-    if st.session_state.get("dark_mode", False):
+    if st.session_state.get("dark_mode", True):
         st.markdown(
             """
             <style>
             .stApp {
-                background: #121212 !important;
-                color: #e0e0e0 !important;
+                background: #000000 !important;
+                color: #ffffff !important;
             }
             .tm-topbar {
-                background: #1e1e1e !important;
-                border: 1px solid #333333 !important;
+                background: #0c0c0e !important;
+                border: 1px solid #222224 !important;
                 color: #ffffff !important;
             }
             .tm-logo-text {
                 color: #8ab4f8 !important;
             }
             .tm-class-card-pro {
-                background: #1e1e1e !important;
-                border: 1px solid #333333 !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+                background: #0c0c0e !important;
+                border: 1px solid #222224 !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.7) !important;
                 color: #ffffff !important;
             }
             .tm-class-card-pro:hover {
-                box-shadow: 0 6px 16px rgba(0,0,0,0.6) !important;
+                box-shadow: 0 6px 16px rgba(0,0,0,0.9) !important;
             }
             .tm-card-divider-pro {
-                background: #333333 !important;
+                background: #222224 !important;
             }
             .tm-sample-label {
-                color: #e0e0e0 !important;
+                color: #ffffff !important;
             }
             .tm-gallery-panel {
-                border-left: 1px solid #333333 !important;
+                border-left: 1px solid #222224 !important;
             }
             .tm-counter {
                 color: #9aa0a6 !important;
             }
             .tm-empty-gallery {
-                background: #181818 !important;
-                border: 1px dashed #333333 !important;
+                background: #050506 !important;
+                border: 1px dashed #222224 !important;
                 color: #9aa0a6 !important;
             }
             .tm-panel {
-                background: #1e1e1e !important;
-                border: 1px solid #333333 !important;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+                background: #0c0c0e !important;
+                border: 1px solid #222224 !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.7) !important;
                 color: #ffffff !important;
             }
             .tm-panel-header {
-                border-bottom: 1px solid #333333 !important;
+                border-bottom: 1px solid #222224 !important;
                 color: #ffffff !important;
             }
             .tm-muted {
@@ -843,7 +854,7 @@ def inject_custom_css() -> None:
                 color: #9aa0a6 !important;
             }
             .tm-prediction-main {
-                background: #1a233a !important;
+                background: #0d1627 !important;
                 border: 1px solid #1a3a6c !important;
             }
             .tm-prediction-class {
@@ -856,17 +867,17 @@ def inject_custom_css() -> None:
                 color: #9aa0a6 !important;
             }
             .tm-confidence-track {
-                background: #333333 !important;
+                background: #222224 !important;
             }
             .tm-webcam-placeholder {
-                background: #1a1a1a !important;
-                border: 1px dashed #333333 !important;
+                background: #050506 !important;
+                border: 1px dashed #222224 !important;
                 color: #9aa0a6 !important;
             }
             div.stButton > button {
-                background: #1e1e1e !important;
+                background: #0c0c0e !important;
                 color: #8ab4f8 !important;
-                border: 1px solid #333333 !important;
+                border: 1px solid #222224 !important;
             }
             div.stButton > button:hover {
                 background: #1a3a6c !important;
@@ -875,21 +886,55 @@ def inject_custom_css() -> None:
             }
             div[data-testid="stTextInput"] input {
                 color: #ffffff !important;
+                background: #050506 !important;
             }
             div[data-testid="stTextInput"] input:hover {
-                background: #282828 !important;
-                border: 1px solid #333333 !important;
+                background: #121214 !important;
+                border: 1px solid #222224 !important;
             }
             div[data-testid="stTextInput"] input:focus {
-                background: #1e1e1e !important;
+                background: #0c0c0e !important;
                 border: 1px solid #1967d2 !important;
+            }
+            div[data-testid="stFileUploader"] section {
+                background: #080c18 !important;
+                border: 1px dashed #1a3a6c !important;
+            }
+            div[data-testid="stFileUploader"] button {
+                background: #1c1c1e !important;
+                color: #8ab4f8 !important;
+                border: 1px solid #333333 !important;
+            }
+            div[data-testid="stFileUploader"] small {
+                color: #9aa0a6 !important;
             }
             .stMarkdown, p, span, label, li, ul {
                 color: #e0e0e0 !important;
             }
             div[data-testid="stExpander"] {
-                background-color: #1e1e1e !important;
-                border: 1px solid #333333 !important;
+                background-color: #0c0c0e !important;
+                border: 1px solid #222224 !important;
+            }
+            .tm-health-card {
+                border-radius: 10px;
+                padding: 16px;
+                margin-bottom: 22px;
+                font-family: Inter, system-ui, sans-serif;
+            }
+            .tm-health-card span, .tm-health-card li, .tm-health-card p, .tm-health-card ul {
+                color: inherit !important;
+            }
+            .tm-confidence-badge {
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 13px;
+                display: inline-block;
+                margin-bottom: 12px;
+                font-family: Inter, sans-serif;
+            }
+            .tm-confidence-badge, .tm-confidence-badge span, .tm-confidence-badge p {
+                color: inherit !important;
             }
             </style>
             """,
@@ -935,7 +980,7 @@ def initialize_session_state() -> None:
         st.session_state.active_camera_class_id = None
 
     if "dark_mode" not in st.session_state:
-        st.session_state.dark_mode = False
+        st.session_state.dark_mode = True
 
     if "history" not in st.session_state:
         st.session_state.history = []
@@ -1004,37 +1049,48 @@ def calculate_dataset_health():
 
 def render_dataset_health_score() -> None:
     score, messages = calculate_dataset_health()
-    if score >= 80:
-        color = "#137333"
-        bg_color = "#e6f4ea"
-        border_color = "#a8dab5"
-    elif score >= 50:
-        color = "#b06000"
-        bg_color = "#fef7e0"
-        border_color = "#ffe0b2"
+    dark_mode = st.session_state.get("dark_mode", True)
+    if dark_mode:
+        if score >= 80:
+            color = "#81c784"
+            bg_color = "#0a2212"
+            border_color = "#1b5e20"
+        elif score >= 50:
+            color = "#ffb74d"
+            bg_color = "#241909"
+            border_color = "#e65100"
+        else:
+            color = "#e57373"
+            bg_color = "#240a0c"
+            border_color = "#b71c1c"
     else:
-        color = "#c5221f"
-        bg_color = "#fce8e6"
-        border_color = "#f5c2c1"
+        if score >= 80:
+            color = "#137333"
+            bg_color = "#e6f4ea"
+            border_color = "#a8dab5"
+        elif score >= 50:
+            color = "#b06000"
+            bg_color = "#fef7e0"
+            border_color = "#ffe0b2"
+        else:
+            color = "#c5221f"
+            bg_color = "#fce8e6"
+            border_color = "#f5c2c1"
 
     messages_html = "".join([f"<li style='margin-bottom: 2px;'>{msg}</li>" for msg in messages])
 
     st.markdown(
         f"""
-        <div style="
+        <div class="tm-health-card" style="
             background: {bg_color};
             border: 1px solid {border_color};
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 22px;
             color: {color};
-            font-family: Inter, system-ui, sans-serif;
         ">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-weight: 800; font-size: 16px; color: {color} !important;">Dataset Health Score</span>
-                <span style="font-size: 26px; font-weight: 900; color: {color} !important;">{score}/100</span>
+                <span style="font-weight: 800; font-size: 16px;">Dataset Health Score</span>
+                <span style="font-size: 26px; font-weight: 900;">{score}/100</span>
             </div>
-            <ul style="margin: 10px 0 0 16px; padding: 0; font-size: 13px; line-height: 1.4; color: {color} !important;">
+            <ul style="margin: 10px 0 0 16px; padding: 0; font-size: 13px; line-height: 1.4;">
                 {messages_html}
             </ul>
         </div>
@@ -2419,35 +2475,46 @@ def render_preview_panel() -> None:
 
         # Confidence status badge
         confidence = prediction["confidence"]
-        if confidence >= 85:
-            status = "High Confidence"
-            badge_color = "#e6f4ea"
-            text_color = "#137333"
-            border_color = "#a8dab5"
-        elif confidence >= 60:
-            status = "Medium Confidence"
-            badge_color = "#fef7e0"
-            text_color = "#b06000"
-            border_color = "#ffe0b2"
+        dark_mode = st.session_state.get("dark_mode", True)
+        if dark_mode:
+            if confidence >= 85:
+                status = "High Confidence"
+                badge_color = "#0a2212"
+                text_color = "#81c784"
+                border_color = "#1b5e20"
+            elif confidence >= 60:
+                status = "Medium Confidence"
+                badge_color = "#241909"
+                text_color = "#ffb74d"
+                border_color = "#e65100"
+            else:
+                status = "Low Confidence"
+                badge_color = "#240a0c"
+                text_color = "#e57373"
+                border_color = "#b71c1c"
         else:
-            status = "Low Confidence"
-            badge_color = "#fce8e6"
-            text_color = "#c5221f"
-            border_color = "#f5c2c1"
+            if confidence >= 85:
+                status = "High Confidence"
+                badge_color = "#e6f4ea"
+                text_color = "#137333"
+                border_color = "#a8dab5"
+            elif confidence >= 60:
+                status = "Medium Confidence"
+                badge_color = "#fef7e0"
+                text_color = "#b06000"
+                border_color = "#ffe0b2"
+            else:
+                status = "Low Confidence"
+                badge_color = "#fce8e6"
+                text_color = "#c5221f"
+                border_color = "#f5c2c1"
 
         st.markdown(
             f"""
-            <div style="
+            <div class="tm-confidence-badge" style="
                 background: {badge_color};
-                color: {text_color} !important;
                 border: 1px solid {border_color};
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-weight: bold;
-                font-size: 13px;
-                display: inline-block;
-                margin-bottom: 12px;
-                font-family: Inter, sans-serif;
+                color: {text_color};
             ">
                 {status}
             </div>
